@@ -12,8 +12,8 @@ const dlqworker = new Worker('deadletter-queue', async (job) => {
    console.log("Failed job processed successfully");
 },
 { connection:{
-    host : 'redis',
-    port :6379,
+    host : process.env.REDIS_HOST,
+    port :Number(process.env.REDIS_PORT),
 }
 
 });

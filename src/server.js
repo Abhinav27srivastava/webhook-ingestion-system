@@ -28,7 +28,7 @@ app.post('/test', (req, res) => {
 app.use(errorHandler);
 
 // postgres database connection
-pool.query()
+pool.connect()
     .then(() =>{
         logger.info('Connected to the database');
     })

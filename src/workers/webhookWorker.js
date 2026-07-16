@@ -19,8 +19,8 @@ const worker = new Worker(
   },
   {
     connection: {   // why this connection is needed because we are using redis to store the jobs in the queue and the worker needs to connect to redis to get the jobs from the queue
-      host: 'redis',
-      port: 6379,
+      host: process.env.REDIS_HOST,
+      port: Number(process.env.REDIS_PORT),
     },
     concurrency: 5, // how many jobs can be processed in parallel by the worker
   }

@@ -4,8 +4,8 @@ const redisClient = require('../config/redis'); // importing redis kyunki bullmq
 
 const webhookQueue = new Queue('webhook-queue', {
     connection:  {
-        host: "redis",
-        port: 6379,
+        host: process.env.REDIS_HOST,
+        port: Number(process.env.REDIS_PORT),
     }, // redis connection provide kar rahe hai
     
     
