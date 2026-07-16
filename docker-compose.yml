@@ -1,0 +1,54 @@
+version: "3.9"
+
+services:
+   
+  redis:
+    image: redis:latest
+    container_name: redis-server
+    ports:
+      - "6379:6379"
+
+  postgres:
+    image: postgres:17
+    container_name: postgres-db
+    environment:
+       POSTGRES_USER: postgres
+       POSTGRES_PASSWORD: abhinavx7890
+       POSTGRES_DB: webhook_db
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d webhook_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+
+  app:
+    build: .
+    container_name: webhook-app
+    environment:
+     PORT: ${PORT}
+     DB_HOST: ${DB_HOST}
+     DB_PORT: ${DB_PORT}
+     DB_NAME: ${DB_NAME}
+     DB_USER: ${DB_USER}
+     DB_PASSWORD: ${DB_PASSWORD}
+     REDIS_HOST: ${REDIS_HOST}
+     REDIS_PORT: ${REDIS_PORT} 
+
+    ports:
+      - "5000:5000"
+    depends_on:
+     redis:
+      condition: service_started
+     postgres:
+      condition: service_healthy
+volumes:
+  postgres-data:
+
+      
