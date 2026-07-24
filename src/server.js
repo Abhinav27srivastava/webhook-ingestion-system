@@ -3,11 +3,13 @@ const express = require('express');
 const app = express();
 
 const webhookRouter = require('./routes/webhook');
+const healthRoutes = require('./routes/health.js');
 const pool = require('./config/db');
 const redisClient =require('./config/redis');
 
 const logger = require('./logger/logger.js')  // ab jaha console hai waha logger kar do and log ki jgh info kar do. aur error ki jgh error kar do. aur log file ka naam loger.js hai.
 const errorHandler = require('./middleware/errorHandler.js')
+
 
 app.use(express.json());
 app.use((req, res, next) => {
@@ -24,7 +26,7 @@ app.post('/test', (req, res) => {
     });
 });
 
-
+app.use("/health",healthRoutes);
 app.use(errorHandler);
 
 // postgres database connection
@@ -47,8 +49,8 @@ redisClient.on("error",(err)=>{
 
 // bullmq queue processor
 
+const PORT = process.env.PORT || 5000;
 
-
-app.listen(5000, () => {
-    logger.info('Server is running on port 5000');
+app.listen(PORT, () => {
+    logger.info(`Server is running on port ${PORT}`);
 });
