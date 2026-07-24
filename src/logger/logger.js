@@ -1,4 +1,4 @@
-const pino = require('pino'); // what is pino ? ans 
+const pino = require('pino'); // what is pino ? 
 
 const logger = pino({               // create one logger object and export it so that we can use it anywhere in the project
     transport: {
