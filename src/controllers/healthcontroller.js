@@ -32,15 +32,15 @@ const healthCheck = async (req,res) =>{
   catch(err)
   {
    res.status(503).json({   // 503 means server is running but some dependecy is not availaible
-    status: "unhealthy",
-    database: "disconnected",
+    status: "unhealthy",   
+    database: "disconnected",  
     redis : redisClient.isReady ? "connected" : "disconnected",
     uptime: process.uptime(),
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV
+    timestamp: new Date().toISOString(),  
+    environment: process.env.NODE_ENV  
    })
   }  
   
-} ;
+} ;  
 
 module.exports = {healthCheck};

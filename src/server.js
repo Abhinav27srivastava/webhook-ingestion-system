@@ -1,7 +1,15 @@
 require('dotenv').config(); // Load environment variables from .env file
 const express = require('express');
 const app = express();
-
+const cors = require('cors');
+const helmet = require('helmet');
+app.set("trust proxy", 1);
+app.use(cors({
+    origin: process.env.FRONTEND_URL, 
+    methods: ['GET', 'POST'],
+    credentials: true, // Allow cookies to be sent
+}))
+const rateLimiter = require('./middleware/rateLimiter.js');
 const webhookRouter = require('./routes/webhook');
 const healthRoutes = require('./routes/health.js');
 const pool = require('./config/db');
@@ -12,9 +20,12 @@ const errorHandler = require('./middleware/errorHandler.js')
 
 
 app.use(express.json());
+app.use(helmet());
+app.use(rateLimiter);
 app.use((req, res, next) => {
     logger.info(`${req.method} ${req.url}`);
-    next();
+    next();   
+    
 });
 
 
