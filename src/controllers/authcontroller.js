@@ -7,7 +7,7 @@ const register = async (req, res) => {
         // Validate request body
         const validatedData = registerSchema.parse(req.body); // 
 
-        const { name, email, password } = validatedData;
+        const { username, email, password } = validatedData; // why a
 
         // Check if email already exists
         const existingUser = await pool.query(
@@ -27,10 +27,10 @@ const register = async (req, res) => {
 
         // Insert user into database
         const result = await pool.query(
-            `INSERT INTO users(name, email, password)
+            `INSERT INTO users(username, email, password)
              VALUES($1, $2, $3)
              RETURNING id, username, email, created_at`,
-            [name, email, hashedPassword]
+            [username, email, hashedPassword]
         );
 
         return res.status(201).json({
