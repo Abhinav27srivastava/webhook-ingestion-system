@@ -9,6 +9,8 @@ app.use(cors({
     methods: ['GET', 'POST'],
     credentials: true, // Allow cookies to be sent
 }))
+
+const authRoutes = require("./routes/auth");
 const rateLimiter = require('./middleware/rateLimiter.js');
 const webhookRouter = require('./routes/webhook');
 const healthRoutes = require('./routes/health.js');
@@ -37,6 +39,8 @@ app.post('/test', (req, res) => {
     });
 });
 
+
+app.use("/auth", authRoutes);
 app.use("/health",healthRoutes);
 app.use(errorHandler);
 
