@@ -1,6 +1,6 @@
 const bcrypt = require("bcrypt");
 const pool = require("../config/db");
-const { registerSchema } = require("../validation/authSchema");
+const registerSchema = require("../validation/authSchema");
 
 const register = async (req, res) => {
     try {
