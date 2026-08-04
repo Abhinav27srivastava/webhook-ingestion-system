@@ -126,9 +126,18 @@ const login = async (req, res) => {
         });
     }
 };
+const profile = async (req, res) => {
+
+    return res.status(200).json({
+        success: true,
+        message: "Protected Route Accessed",
+        user: req.user // req.user hame user ki information deta hai jo authenticate middleware me set kiya gaya tha
+    });
+}
 module.exports = {
     register,
-    login
+    login,
+    profile
 };
 
 
