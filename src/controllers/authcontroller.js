@@ -1,8 +1,10 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const pool = require("../config/db");
-const registerSchema = require("../validation/authSchema");
-const loginSchema = require("../validation/authSchema");
+const {
+    registerSchema,
+    loginSchema
+} = require("../validation/authSchema");
 const register = async (req, res) => {
     try {
         // Validate request body
