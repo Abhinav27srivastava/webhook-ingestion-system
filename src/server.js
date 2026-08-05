@@ -9,7 +9,12 @@ app.use(cors({
     methods: ['GET', 'POST'],
     credentials: true, // Allow cookies to be sent
 }))
-
+const {swaggerUi,swaggerSpex} = require('./docs/swagger.js');
+app.use(
+    '/api-docs', 
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpex)
+);
 const authRoutes = require("./routes/auth");
 const rateLimiter = require('./middleware/rateLimiter.js');
 const webhookRouter = require('./routes/webhook');
