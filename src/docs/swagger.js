@@ -33,7 +33,7 @@ const options ={
     // we can specify the files containing the API documentation
     apis: ["./src/routes/*.js"]
 };
-const swaggerSpec = swaggerJsDoc(options);  
+const swaggerSpec = swaggerJsdoc(options);  
 module.exports ={
     swaggerUi,
     swaggerSpec
