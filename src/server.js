@@ -9,11 +9,11 @@ app.use(cors({
     methods: ['GET', 'POST'],
     credentials: true, // Allow cookies to be sent
 }))
-const {swaggerUi,swaggerSpex} = require('./docs/swagger.js');
+const {swaggerUi,swaggerSpec} = require('./docs/swagger');
 app.use(
-    '/api-docs', 
+    '/docs', 
     swaggerUi.serve,
-    swaggerUi.setup(swaggerSpex)
+    swaggerUi.setup(swaggerSpec)
 );
 const authRoutes = require("./routes/auth");
 const rateLimiter = require('./middleware/rateLimiter.js');
