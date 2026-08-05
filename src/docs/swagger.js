@@ -1,4 +1,4 @@
-const swaggerJsdoc = require("swagger-jsdoc");
+const swaggerJsDoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
 const options ={
     // we can add swagger definition here like api info ,name,version,description etc
@@ -33,7 +33,7 @@ const options ={
     // we can specify the files containing the API documentation
     apis: ["./src/routes/*.js"]
 };
-const swaggerSpec = swaggerJsdoc(options);  
+const swaggerSpec = swaggerJsDoc(options);  
 module.exports ={
     swaggerUi,
     swaggerSpec
