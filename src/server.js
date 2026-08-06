@@ -51,7 +51,7 @@ app.post('/test', (req, res) => {
         success: true
     });
 });
-app.use("/admin/queue", bullBoard);
+app.use("/admin/queues", bullBoard);
 
 app.use("/auth", authRoutes);
 app.use("/health",healthRoutes);
