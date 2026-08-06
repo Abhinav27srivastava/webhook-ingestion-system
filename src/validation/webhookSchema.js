@@ -6,7 +6,7 @@ const webhookSchema = z.object({
     last_name: z.string().trim().min(1, { message: "Last name is required" }),
     roll_no: z.string().trim().min(1, { message: "Roll number is required" }),
     email: z.string().trim().email({ message: "Invalid email address" }),
-
+    
 
 });
 

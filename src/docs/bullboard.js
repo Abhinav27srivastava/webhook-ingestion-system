@@ -4,7 +4,7 @@ const { BullMQAdapter } = require('@bull-board/api/bullMQAdapter');
 const { Queue } = require('bullmq');
 const { redisClient } = require('../config/redis');
 
-const webhookQueue = require('../queues/webhookQueue');
+const webhookQueue = require('../queue/webhookQueue');
 
 const serverAdapter = new ExpressAdapter();
 serverAdapter.setBasePath('/admin/queues');

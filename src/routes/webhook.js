@@ -18,7 +18,7 @@ const webhookSchema = require('../validation/webhookSchema');
  *         application/json:
  *           example:
  *             name: "john doe"
- *             last_name:"doe"
+ *             last_name: "doe"
  *             roll_no: "123456"
  *             email: "john.doe@example.com"
  *             
