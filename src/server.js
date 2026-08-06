@@ -24,6 +24,7 @@ const redisClient =require('./config/redis');
 const bullBoard = require("./docs/bullboard");
 const logger = require('./logger/logger.js')  // ab jaha console hai waha logger kar do and log ki jgh info kar do. aur error ki jgh error kar do. aur log file ka naam loger.js hai.
 const errorHandler = require('./middleware/errorHandler.js')
+const dlqRoutes = require("./routes/dlq");
 
 
 app.use(express.json());
@@ -56,7 +57,7 @@ app.use("/admin/queues", bullBoard);
 app.use("/auth", authRoutes);
 app.use("/health",healthRoutes);
 app.use(errorHandler);
-
+app.use("/webhook", dlqRoutes);
 // postgres database connection
 pool.connect()
     .then(() =>{
