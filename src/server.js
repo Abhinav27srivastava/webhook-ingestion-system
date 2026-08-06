@@ -27,7 +27,15 @@ const errorHandler = require('./middleware/errorHandler.js')
 
 
 app.use(express.json());
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        upgradeInsecureRequests: null,
+      },
+    },
+  })
+);
 app.use(rateLimiter);
 app.use((req, res, next) => {
     logger.info(`${req.method} ${req.url}`);
