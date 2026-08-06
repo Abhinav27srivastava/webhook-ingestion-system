@@ -5,9 +5,9 @@ const options ={
     definition: {
         openapi: "3.0.0",
         info: {
-            title: "Webhook API",
-            version: "1.0.0",
-            description: "A simple Express API"
+            title: "Webhook Ingestion System API",
+            version: "v1.0.0",
+            description: "Webhook Ingestion System built with Express.js, PostgreSQL, Redis, JWT Authentication, Role-Based Access Control (RBAC), Docker and Swagger Documentation."
         },
         servers:[{
             url: "http://localhost:5000",
@@ -28,7 +28,16 @@ const options ={
         },
         security:[{
             bearerAuth: []
-        }]
+        }],
+        contacts: {
+            name: "Abhinav Srivastava",
+            email: "srivastavaabhinav307@gmail.com",
+            url: "https://github.com/Abhinav27srivastava"
+        },
+        externalDocs: {
+    description: "GitHub Repository",
+    url: "https://github.com/Abhinav27srivastava/webhook-ingestion-system"
+}
     },
     // we can specify the files containing the API documentation
     apis: ["./src/routes/*.js"]
