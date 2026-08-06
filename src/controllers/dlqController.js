@@ -1,8 +1,6 @@
 const deadletterqueue = require('../queue/deadletterqueue');
-const webhookQueue = require('../queue/webhookQueue');
+const webhookQueue = require('../queue/webhookQueue');//importing the webhook queue to move the job back to main queue after retrying
 //GET /webhook/failed
-const deadletterqueue = require("../queue/deadletterqueue");
-const webhookQueue = require("../queue/webhookQueue");
 
 // GET /webhook/failed
 exports.getFailedJobs = async (req, res, next) => {
