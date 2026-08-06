@@ -4,7 +4,33 @@ const router = express.Router();
 const { receiveWebhook } = require('../controllers/webhookcontroller'); // Import the controller function   
 const validate = require('../middleware/validate');
 const webhookSchema = require('../validation/webhookSchema');
-
+/**
+ * @swagger
+ * /webhook:
+ *   post:
+ *     tags:
+ *       - Webhook
+ *     summary: Receive a webhook event
+ *     description: Receives a webhook payload, validates it, stores it in PostgreSQL, and queues it for background processing.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           example:
+ *             event: "payment.success"
+ *             amount: 500
+ *             userId: 123
+ *     responses:
+ *       200:
+ *         description: Webhook received and queued successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: Webhook received and queued successfully
+ *       400:
+ *         description: Invalid payload
+ */
 
 router.post('/',validate(webhookSchema), (req, res, next) => {
     console.log('Webhook route POST handler called');
