@@ -17,9 +17,12 @@ const webhookSchema = require('../validation/webhookSchema');
  *       content:
  *         application/json:
  *           example:
- *             event: "payment.success"
- *             amount: 500
- *             userId: 123
+ *             name: "john doe"
+ *             last_name:"doe"
+ *             roll_no: "123456"
+ *             email: "john.doe@example.com"
+ *             
+ *             
  *     responses:
  *       200:
  *         description: Webhook received and queued successfully

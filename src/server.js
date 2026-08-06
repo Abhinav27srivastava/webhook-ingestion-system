@@ -21,7 +21,7 @@ const webhookRouter = require('./routes/webhook');
 const healthRoutes = require('./routes/health.js');
 const pool = require('./config/db');
 const redisClient =require('./config/redis');
-
+const bullBoard = require("./docs/bullboard");
 const logger = require('./logger/logger.js')  // ab jaha console hai waha logger kar do and log ki jgh info kar do. aur error ki jgh error kar do. aur log file ka naam loger.js hai.
 const errorHandler = require('./middleware/errorHandler.js')
 
@@ -43,7 +43,7 @@ app.post('/test', (req, res) => {
         success: true
     });
 });
-
+app.use("/admin/queues", bullBoard);
 
 app.use("/auth", authRoutes);
 app.use("/health",healthRoutes);
