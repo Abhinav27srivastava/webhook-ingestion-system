@@ -1,5 +1,5 @@
 const { Worker } = require('bullmq'); // use Worker class from bullmq
-const deadletterqueue = require('../queue/deadletterQueue');
+const deadletterqueue = require('../queue/deadletterqueue');
 // helper fucntion to process the jobs in the queue it pauses the job to the worker and the worker will process the job and return the result
 function sleep(ms = 5000) {
   return new Promise((resolve) => setTimeout(resolve, ms));
