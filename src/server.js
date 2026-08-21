@@ -16,7 +16,7 @@ app.use(
     swaggerUi.setup(swaggerSpec)
 );
 const authRoutes = require("./routes/auth");
-const rateLimiter = require('./middleware/rateLimiter.js');
+const rateLimiter = require('./middleware/ratelimiter.js');
 const webhookRouter = require('./routes/webhook');
 const healthRoutes = require('./routes/health.js');
 const pool = require('./config/db');
@@ -27,7 +27,17 @@ const errorHandler = require('./middleware/errorHandler.js')
 const dlqRoutes = require("./routes/dlq");
 
 
-app.use(express.json());
+app.use(
+    express.json({
+        verify: (req, res, buf) => {
+            if (req.originalUrl.startsWith('/webhook')) {
+                req.rawBody = Buffer.from(buf);
+            }
+        },
+    })
+);
+
+
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -46,18 +56,14 @@ app.use((req, res, next) => {
 
 
 app.use('/webhook', webhookRouter);
-app.post('/test', (req, res) => {
-    logger.info("TEST ROUTE HIT");
-    res.json({
-        success: true
-    });
-});
+
 app.use("/admin/queues", bullBoard);
 
 app.use("/auth", authRoutes);
 app.use("/health",healthRoutes);
-app.use(errorHandler);
 app.use("/webhook", dlqRoutes);
+
+app.use(errorHandler);
 // postgres database connection
 pool.connect()
     .then(() =>{

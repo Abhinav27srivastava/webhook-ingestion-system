@@ -15,14 +15,14 @@ const healthCheck = async (req,res) =>{
         return res.status(503).json({
             status: "unhealthy",
             databse: "connected",
-            redis: "redisStatus"
+            redis: redisStatus
         });
     }
       
     res.status(200).json({
         status: "healthy",
-        databse: "connected",
-        redis: "redisStatus",
+        database: "connected",
+        redis: redisStatus,
         uptime: process.uptime(),
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV

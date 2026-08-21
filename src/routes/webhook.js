@@ -4,6 +4,7 @@ const router = express.Router();
 const { receiveWebhook } = require('../controllers/webhookcontroller'); // Import the controller function   
 const validate = require('../middleware/validate');
 const webhookSchema = require('../validation/webhookSchema');
+const verifySignature = require('../middleware/webhookSignature');
 /**
  * @swagger
  * /webhook:
@@ -35,7 +36,7 @@ const webhookSchema = require('../validation/webhookSchema');
  *         description: Invalid payload
  */
 
-router.post('/',validate(webhookSchema), (req, res, next) => {
+router.post('/',verifySignature,validate(webhookSchema), (req, res, next) => {
     console.log('Webhook route POST handler called');
     console.log('Request body:', req.body);
     next();
