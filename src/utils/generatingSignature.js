@@ -1,4 +1,7 @@
-// sender-side signing  basically its work to do rawBody + timestamp +secret par apply hmac calculation then verify signature
+// sender-side signing
+// rawBody + timestamp + secret par HMAC calculation karta hai
+// aur signature generate karta hai
+
 const crypto = require('crypto');
 
 function generateWebhookSignature(rawBody, timestamp, secret) {

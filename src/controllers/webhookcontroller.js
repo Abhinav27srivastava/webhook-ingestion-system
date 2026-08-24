@@ -10,7 +10,9 @@ const router = express.Router();
 async function receiveWebhook(req, res, next) {
     try {
         const payload = req.body;
-        const eventId = req.headers['x-idempotency-key'];
+          // Primary identity of the webhook event
+        const eventId = payload.id;     
+        //const eventId = req.headers['x-idempotency-key'];
 
         if (!eventId) {
             return res.status(400).json({
@@ -19,7 +21,7 @@ async function receiveWebhook(req, res, next) {
             });
         }
 
-        const result = await pool.query(
+        const result = await pool.query( 
             'INSERT INTO webhook_events (payload, event_id,status) VALUES ($1, $2,$3) ON CONFLICT (event_id) DO NOTHING RETURNING id, event_id',
             [payload, eventId,'received']
         );
@@ -38,7 +40,7 @@ async function receiveWebhook(req, res, next) {
           const job = await webhookQueue.add(
                     'process-webhook',
                          {
-                webhookId: webhookEvent.id,
+                webhookEventId: webhookEvent.id,
                 eventId: webhookEvent.event_id,
                 payload
                      },

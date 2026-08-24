@@ -1,88 +1,30 @@
-require('dotenv').config(); // Load environment variables from .env file
-const express = require('express');
-const app = express();
-const cors = require('cors');
-const helmet = require('helmet');
-app.set("trust proxy", 1);
-app.use(cors({
-    origin: process.env.FRONTEND_URL, 
-    methods: ['GET', 'POST'],
-    credentials: true, // Allow cookies to be sent
-}))
-const {swaggerUi,swaggerSpec} = require('./docs/swagger');
-app.use(
-    '/docs', 
-    swaggerUi.serve,
-    swaggerUi.setup(swaggerSpec)
-);
-const authRoutes = require("./routes/auth");
-const rateLimiter = require('./middleware/ratelimiter.js');
-const webhookRouter = require('./routes/webhook');
-const healthRoutes = require('./routes/health.js');
+// server.js contains connections + app.listen
+require('dotenv').config();
+
+const app = require('./app');
 const pool = require('./config/db');
-const redisClient =require('./config/redis');
-const bullBoard = require("./docs/bullboard");
-const logger = require('./logger/logger.js')  // ab jaha console hai waha logger kar do and log ki jgh info kar do. aur error ki jgh error kar do. aur log file ka naam loger.js hai.
-const errorHandler = require('./middleware/errorHandler.js')
-const dlqRoutes = require("./routes/dlq");
+const {
+    redisClient,
+    connectRedis,
+} = require('./config/redis');
+const logger = require('./logger/logger.js');
 
-
-app.use(
-    express.json({
-        verify: (req, res, buf) => {
-            if (req.originalUrl.startsWith('/webhook')) {
-                req.rawBody = Buffer.from(buf);
-            }
-        },
-    })
-);
-
-
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        upgradeInsecureRequests: null,
-      },
-    },
-  })
-);
-app.use(rateLimiter);
-app.use((req, res, next) => {
-    logger.info(`${req.method} ${req.url}`);
-    next();   
-    
-});
-
-
-app.use('/webhook', webhookRouter);
-
-app.use("/admin/queues", bullBoard);
-
-app.use("/auth", authRoutes);
-app.use("/health",healthRoutes);
-app.use("/webhook", dlqRoutes);
-
-app.use(errorHandler);
-// postgres database connection
 pool.connect()
-    .then(() =>{
+    .then(() => {
         logger.info('Connected to the database');
     })
     .catch((err) => {
-        logger.error('Error connecting to the database', err);
+        logger.error(err, 'Error connecting to the database');
     });
 
-// redis connection  
-redisClient.on("connect", ()=>{
-    logger.info("Connected to Redis");
-}); 
-redisClient.on("error",(err)=>{
-    logger.error("Error connecting to Redis", err);
+redisClient.on('error', (err) => {
+    logger.error(err, 'Error connecting to Redis');
 });
 
-
-// bullmq queue processor
+connectRedis()
+    .catch((err) => {
+        logger.error(err, 'Error connecting to Redis');
+    });
 
 const PORT = process.env.PORT || 5000;
 

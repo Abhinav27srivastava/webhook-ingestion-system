@@ -19,7 +19,7 @@ const worker = new Worker(
     console.log("job_data:", job.data);
     console.log('Processing webhook job:');
    
-   
+   //throw new Error("DLQ test");
    // mark event as processing
     await pool.query(
       `
@@ -27,7 +27,7 @@ const worker = new Worker(
        SET status ='processing'
        WHERE id =$1 `, [webhookEventId]
     );
-  // after processed if we have error create then... so we are going to use try and catch for this..
+  // checking processed or not ... so we are going to use try and catch for this..
    try{
     console.log(`Processing webhook event ${eventId}`);
 
@@ -72,19 +72,25 @@ const worker = new Worker(
   }
 );
 
-worker.on('failed', async (job,err)=>{
-    console.log(`Job ${job.id} failed with error ${err.message}`);
-    // move the failed job to dead letter queue
-    await deadletterqueue.add('failed-job',{
-        payload: job.data,
-        jobid: job.id,
-        error: err.message,
-        failedAt: new Date().toISOString()
-    });
+worker.on('failed', async (job, err) => {
+    if (!job) return;
+
+    console.log(
+        `Job ${job.id} failed with error ${err.message}`
+    );
+
+    if (job.attemptsMade >= job.opts.attempts) {
+        await deadletterqueue.add('failed-job', {
+            webhookEventId: job.data.webhookEventId,
+            eventId: job.data.eventId,
+            payload: job.data.payload,
+            jobId: job.id,
+            error: err.message,
+            failedAt: new Date().toISOString()
+        });
+    }
 });
 console.log("Worker is working");
 
 
 
-// ab jo wroker ko alag terminal pe run karenge kyunki woh process kr rha job ko ..
-// server,js woh request ko receive kr rha hai aur database me insert kr rha hai aur job ko queue me dal rha hai .. worker woh job ko process kr rha hai .. isliye alag terminal pe run karenge ..

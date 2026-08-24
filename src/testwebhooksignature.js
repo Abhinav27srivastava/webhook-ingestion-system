@@ -6,10 +6,14 @@ const {
 
 async function sendWebhook() {
     const payload = {
-        name: 'Anshika',
-        last_name: 'Singh',
-        roll_no: '24it3002',
-        email: '24it3002@gmail.com',
+      id: 'evt-004',
+        type: 'payment.success',
+        timestamp: Math.floor(Date.now() / 1000),
+        data: {
+            amount: 500,
+            currency: 'INR',
+            orderId: 'order-123'
+        }
     };
 
     const rawBody = JSON.stringify(payload);
@@ -23,11 +27,11 @@ async function sendWebhook() {
 
     const response = await fetch('http://localhost:5000/webhook', {
         method: 'POST',
-        headers: {
+        headers: {  
             'Content-Type': 'application/json',
             'X-Webhook-Timestamp': String(timestamp),
             'X-Webhook-Signature': signature,
-            'X-Idempotency-Key': 'evt-test-002',
+            
         },
         body: rawBody,
     });
