@@ -2,7 +2,7 @@ require('dotenv').config();
 
 const {
     generateWebhookSignature,
-} = require('./Utils/generatingSignature');
+} = require('./utils/generatingSignature');
 
 async function sendWebhook() {
     const payload = {
