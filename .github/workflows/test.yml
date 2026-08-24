@@ -1,26 +1,31 @@
-name: webhook ingestion system 
+name: webhook ingestion system
 
 on:
   push:
     branches:
-      -main
+      - main
+
   pull_request:
     branches:
-      -main
+      - main
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
     services:
+
       postgres:
         image: postgres:17
+
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
           POSTGRES_DB: webhook_test_db
+
         ports:
           - 5432:5432
+
         options: >-
           --health-cmd="pg_isready -U postgres -d webhook_test_db"
           --health-interval=5s
@@ -29,6 +34,7 @@ jobs:
 
       redis:
         image: redis:latest
+
         ports:
           - 6379:6379
 
@@ -53,6 +59,7 @@ jobs:
       FRONTEND_URL: http://localhost:3000
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -69,6 +76,4 @@ jobs:
         run: npm run migrate
 
       - name: Run tests
-        run: npm test      
-
-     
+        run: npm test
