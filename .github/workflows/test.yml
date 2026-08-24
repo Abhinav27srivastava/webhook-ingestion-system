@@ -58,7 +58,7 @@ jobs:
 
       FRONTEND_URL: http://localhost:3000
 
-    steps:
+    steps: 
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -74,6 +74,15 @@ jobs:
 
       - name: Run database migrations
         run: npm run migrate
-
+         
+      - name: Start webhook worker
+        run: |
+          nohup npm run worker > worker.log 2>&1 &
+          echo $! > worker.pid
+          sleep 5
       - name: Run tests
         run: npm test
+
+      - name: Show worker logs
+        if: always()
+        run: cat worker.log 
