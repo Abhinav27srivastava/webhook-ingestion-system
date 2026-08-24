@@ -3,7 +3,7 @@ const app = require('../../src/app');
 const pool = require('../../src/config/db')
 const {
     generateWebhookSignature,
-} = require('../../src/Utils/generatingSignature');
+} = require('../../src/utils/generatingSignature');
 const webhookQueue = require('../../src/queue/webhookQueue');
 const deadletterQueue = require('../../src/queue/deadletterqueue');
 
