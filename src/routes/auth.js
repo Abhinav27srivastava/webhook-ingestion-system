@@ -20,6 +20,10 @@ const authorize = require("../middleware/authorize");
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - username
+ *               - email
+ *               - password
  *             properties:
  *               username:
  *                 type: string
@@ -54,7 +58,9 @@ router.post("/register", register);
  *         application/json:
  *           schema:
  *             type: object
- *
+ *             required:
+ *               - email
+ *               - password
  *             properties:
  *               email:
  *                 type: string

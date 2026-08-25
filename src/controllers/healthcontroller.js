@@ -1,5 +1,5 @@
 const pool = require('../config/db');
-const redisClient = require('../config/redis');
+const { redisClient } = require('../config/redis');
 const logger = require('../logger/logger');
 
 

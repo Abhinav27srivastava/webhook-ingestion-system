@@ -10,7 +10,7 @@ const register = async (req, res) => {
         // Validate request body
         const validatedData = registerSchema.parse(req.body); // 
 
-        const { username, email, password } = validatedData; // why a
+        const { username, email, password } = validatedData; // 
 
         // Check if email already exists
         const existingUser = await pool.query(

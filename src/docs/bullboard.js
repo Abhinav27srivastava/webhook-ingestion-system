@@ -15,4 +15,4 @@ createBullBoard({
     serverAdapter,
 });
 
-module.exports = serverAdapter.getRouter();
+module.exports = serverAdapter.getRouter(); 

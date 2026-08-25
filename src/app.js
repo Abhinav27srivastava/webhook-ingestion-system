@@ -21,6 +21,7 @@ const rateLimiter = require('./middleware/ratelimiter.js');
 const webhookRouter = require('./routes/webhook');
 const healthRoutes = require('./routes/health.js');
 const bullBoard = require('./docs/bullboard');
+const bullBoardAuth = require('./middleware/bullboardAuth');
 const logger = require('./logger/logger.js');
 const errorHandler = require('./middleware/errorHandler.js');
 const dlqRoutes = require('./routes/dlq');
@@ -42,6 +43,11 @@ app.use(
         },
     })
 );
+app.use(
+    '/docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec)
+);
 
 app.use(rateLimiter);
 
@@ -50,14 +56,13 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(
-    '/docs',
-    swaggerUi.serve,
-    swaggerUi.setup(swaggerSpec)
-);
 
 app.use('/webhook', webhookRouter);
-app.use('/admin/queues', bullBoard);
+app.use(
+    '/admin/queues',
+    bullBoardAuth,
+    bullBoard
+);
 app.use('/auth', authRoutes);
 app.use('/health', healthRoutes);
 app.use('/webhook', dlqRoutes);

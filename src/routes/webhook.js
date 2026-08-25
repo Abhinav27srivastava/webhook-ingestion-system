@@ -9,32 +9,51 @@ const verifySignature = require('../middleware/webhookSignature');
  * @swagger
  * /webhook:
  *   post:
- *     tags:
- *       - Webhook
  *     summary: Receive a webhook event
  *     description: Receives a webhook payload, validates it, stores it in PostgreSQL, and queues it for background processing.
+ *     tags:
+ *       - Webhook
+ *
+ *     parameters:
+ *       - in: header
+ *         name: X-Webhook-Timestamp
+ *         required: true
+ *         description: Unix timestamp used for replay protection.
+ *         schema:
+ *           type: string
+ *
+ *       - in: header
+ *         name: X-Webhook-Signature
+ *         required: true
+ *         description: HMAC-SHA256 signature in sha256=<digest> format.
+ *         schema:
+ *           type: string
+ *
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
- *           example:
- *             name: "john doe"
- *             last_name: "doe"
- *             roll_no: "123456"
- *             email: "john.doe@example.com"
- *             
- *             
+ *           schema:
+ *             $ref: '#/components/schemas/WebhookEvent'
+ *
  *     responses:
  *       200:
- *         description: Webhook received and queued successfully
+ *         description: Duplicate webhook event.
+ *
+ *       202:
+ *         description: Webhook accepted and queued.
  *         content:
  *           application/json:
- *             example:
- *               success: true
- *               message: Webhook received and queued successfully
+ *             schema:
+ *               $ref: '#/components/schemas/WebhookResponse'
+ *
  *       400:
- *         description: Invalid payload
- */
+ *         description: Invalid request or validation error.
+ *
+ *       401:
+ *         description: Missing or invalid webhook signature or timestamp.
+ */ 
+
 
 router.post('/',verifySignature,validate(webhookSchema), (req, res, next) => {
     console.log('Webhook route POST handler called');
