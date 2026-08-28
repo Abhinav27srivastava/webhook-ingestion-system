@@ -1,6 +1,7 @@
 const { Worker } = require('bullmq'); // use Worker class from bullmq
 const deadletterqueue = require('../queue/deadletterqueue');
 const pool =require('../config/db');
+const { sendWebhookNotification } = require('../services/notificationService');
 // helper fucntion to process the jobs in the queue it pauses the job to the worker and the worker will process the job and return the result
 function sleep(ms = 5000) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -30,7 +31,10 @@ const worker = new Worker(
   // checking processed or not ... so we are going to use try and catch for this..
    try{
     console.log(`Processing webhook event ${eventId}`);
-
+    await sendWebhookNotification({
+        eventId,
+        payload
+    });
     // If processing succeeds:
             await pool.query(
                 `
