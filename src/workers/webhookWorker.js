@@ -96,5 +96,6 @@ worker.on('failed', async (job, err) => {
 });
 console.log("Worker is working");
 
+module.exports = worker;
 
 

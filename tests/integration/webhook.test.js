@@ -11,7 +11,7 @@ const {
 } = require('../../src/utils/generatingSignature');
 const webhookQueue = require('../../src/queue/webhookQueue');
 // Start BullMQ worker for integration tests
-require('../../src/workers/webhookWorker');
+const worker = require('../../src/workers/webhookWorker');
 const deadletterQueue = require('../../src/queue/deadletterqueue');
 
 
@@ -156,6 +156,7 @@ expect(processed.status).toBe('processed');
     expect(secondResponse.body.duplicate).toBe(true);
 });
    afterAll(async()=>{
+     await worker.close();
      await webhookQueue.close();
      await deadletterQueue.close();
      await pool.end();
