@@ -1,10 +1,17 @@
 const request = require('supertest');
+jest.mock('../../src/services/notificationService', () => ({
+    sendWebhookNotification: jest.fn().mockResolvedValue({
+        id: 'test-email-id'
+    }),
+}));
 const app = require('../../src/app');
 const pool = require('../../src/config/db')
 const {
     generateWebhookSignature,
 } = require('../../src/utils/generatingSignature');
 const webhookQueue = require('../../src/queue/webhookQueue');
+// Start BullMQ worker for integration tests
+require('../../src/workers/webhookWorker');
 const deadletterQueue = require('../../src/queue/deadletterqueue');
 
 
@@ -98,7 +105,7 @@ describe('WEBHOOK API', () => {
         );
         expect(result.rows).toHaveLength(1);
     expect(result.rows[0].event_id).toBe(payload.id);
-    expect(result.rows[0].status).toBe('received'); 
+    
  const processed = await waitForProcessed(payload.id);
 
 expect(processed.status).toBe('processed');
