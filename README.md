@@ -899,17 +899,3 @@ If you found this project useful, consider giving the repository a ⭐ on GitHub
 
 This project is developed for educational and project demonstration purposes.
 
-
-**Bas ek cheez aur:** Swagger ke `swagger.js` mein bhi production server add kar dena, taaki README aur Swagger dono same production URL show karein:
-
-```js
-servers: [
-    {
-        url: 'https://webhook-ingestion-system.onrender.com',
-        description: 'Production Server'
-    },
-    {
-        url: 'http://localhost:5000',
-        description: 'Local Development Server'
-    }
-]
