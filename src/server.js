@@ -8,6 +8,7 @@ const {
     connectRedis,
 } = require('./config/redis');
 const logger = require('./logger/logger.js');
+require('./workers/webhookWorker');
 
 pool.connect()
     .then(() => {

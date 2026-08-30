@@ -10,16 +10,16 @@ function sleep(ms = 5000) {
 const worker = new Worker(
   'webhook-queue',
   async (job) => {
-     const{webhookEventId,
+     const{
+            webhookEventId,
             eventId,
             payload,
         } = job.data;  // initially job.data contain payload
-
+   
     console.log("job_id:", job.id);
     console.log("job_name:", job.name);
     console.log("job_data:", job.data);
     console.log('Processing webhook job:');
-   
    //throw new Error("DLQ test");
    // mark event as processing
     await pool.query(
@@ -33,7 +33,8 @@ const worker = new Worker(
     console.log(`Processing webhook event ${eventId}`);
     await sendWebhookNotification({
         eventId,
-        payload
+        payload,
+       
     });
     // If processing succeeds:
             await pool.query(
