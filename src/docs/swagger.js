@@ -15,7 +15,10 @@ const options = {
                 'Generic Webhook Ingestion System built with Express.js, PostgreSQL, Redis, BullMQ, JWT Authentication, RBAC, Docker and Swagger.',
         },
 
-        servers: [
+        servers: [ {
+        url: 'https://webhook-ingestion-system.onrender.com',
+        description: 'Production Server'
+    },
             {
                 url: 'http://localhost:5000',
                 description: 'Local development server',
