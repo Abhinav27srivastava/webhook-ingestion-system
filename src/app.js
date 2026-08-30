@@ -26,6 +26,7 @@ const logger = require('./logger/logger.js');
 const errorHandler = require('./middleware/errorHandler.js');
 const dlqRoutes = require('./routes/dlq');
 
+
 app.use(express.json({
     verify: (req, res, buf) => {
         if (req.originalUrl.startsWith('/webhook')) {
@@ -43,6 +44,15 @@ app.use(
         },
     })
 );
+app.get("/", (req, res) => {
+    res.json({
+        success: true,
+        message: "Webhook Ingestion System is running",
+        documentation: "/docs",
+        status: "healthy"
+    });
+});
+
 app.use(
     '/docs',
     swaggerUi.serve,
