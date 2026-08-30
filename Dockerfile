@@ -17,4 +17,4 @@ USER node
 
 EXPOSE 5000
 
-CMD ["node", "src/server.js"]
+CMD ["sh", "-c", "node migrate.js && node src/server.js"]
