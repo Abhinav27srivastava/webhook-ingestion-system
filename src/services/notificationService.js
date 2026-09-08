@@ -1,7 +1,7 @@
 const { Resend } = require("resend");
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const escapeHtml = require("../utils/escapeHtml.js");
+const escapeHtml = require("../utils/escapeHtml");
 const logger = require("../logger/logger.js");
 
 async function sendWebhookNotification({ eventId, payload }) {
