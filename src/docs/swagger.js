@@ -43,7 +43,7 @@ const options = {
                     schema: {
                         type: 'integer',
                     },
-                    example: 1724438400,
+                    example: 'CURRENT_UNIX_TIMESTAMP',
                 }, 
                 WebhookSignature: {
                     name: 'X-Webhook-Signature',
@@ -55,7 +55,7 @@ const options = {
                         type: 'string',
                     },
                     example:
-                        'sha256=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+                        'sha256=<GENERATED_HMAC_SHA256_SIGNATURE>',
                 },
             },
             schemas: {

@@ -58,7 +58,19 @@ services:
         condition: service_started
       postgres:
         condition: service_healthy
+  publisher:
+    build: .
+    container_name: webhook-publisher
+    command: npm run publisher
 
+    env_file:
+      - .env
+
+    depends_on:
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_healthy
   test:
     build: 
       context: .
@@ -103,5 +115,26 @@ services:
         condition: service_started
       postgres:
         condition: service_healthy  
+  test-publisher:
+    build: .
+    container_name: webhook-test-publisher
+
+    env_file:
+      - .env
+
+    environment:
+      NODE_ENV: test
+      DB_HOST: postgres
+      DB_NAME: webhook_test_db
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+    command: npm run publisher
+
+    depends_on:
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_healthy        
 volumes:
   postgres-data:

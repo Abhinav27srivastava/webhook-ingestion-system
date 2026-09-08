@@ -1,73 +1,105 @@
-const express = require('express');
 const pool = require('../config/db');
-const webhookQueue = require('../queue/webhookQueue');
-
-
-const router = express.Router();
-
-
 
 async function receiveWebhook(req, res, next) {
+    const client = await pool.connect();
+
     try {
         const payload = req.body;
-          // Primary identity of the webhook event
-        const eventId = payload.id;     
-        //const eventId = req.headers['x-idempotency-key'];
+
+        // Primary identity of the webhook event
+        // This also acts as the idempotency key.
+        const eventId = payload.id;
 
         if (!eventId) {
+            client.release();
+
             return res.status(400).json({
                 success: false,
-                message: 'idempotemcy key is required in the header'
+                message: 'Webhook event id is required'
             });
         }
 
-        const result = await pool.query( 
-            'INSERT INTO webhook_events (payload, event_id,status) VALUES ($1, $2,$3) ON CONFLICT (event_id) DO NOTHING RETURNING id, event_id',
-            [payload, eventId,'received']
+        // Start database transaction
+        await client.query('BEGIN');
+
+        // Insert the webhook event
+        const result = await client.query(
+            `
+            INSERT INTO webhook_events
+                (payload, event_id, status)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (event_id) DO NOTHING
+            RETURNING id, event_id
+            `,
+            [payload, eventId, 'received']
         );
 
+        // Duplicate webhook
         if (result.rowCount === 0) {
+            await client.query('ROLLBACK');
+            client.release();
+
             return res.status(200).json({
-                  success: true,
+                success: true,
                 duplicate: true,
                 message: 'Webhook already received',
-                eventid: `${eventId}`
+                eventId
             });
         }
-           const webhookEvent = result.rows[0];
-// database row id to queue job 
-       
-          const job = await webhookQueue.add(
-                    'process-webhook',
-                         {
-                webhookEventId: webhookEvent.id,
-                eventId: webhookEvent.event_id,
-                payload
-                     },
-                   {
-                attempts: 3,
-                backoff: {
-                    type: 'fixed',
-                    delay: 5000
-                }
-            }
-        );
-        console.log(
-            `Webhook event ${webhookEvent.id} queued as BullMQ job ${job.id}`
+
+        const webhookEvent = result.rows[0];
+
+        // Store event in outbox in the SAME transaction
+        await client.query(
+            `
+            INSERT INTO outbox_events
+                (webhook_event_id, event_id, payload, status)
+            VALUES ($1, $2, $3, $4)
+            `,
+            [
+                webhookEvent.id,
+                webhookEvent.event_id,
+                payload,
+                'pending'
+            ]
         );
 
-        return res.status(200).json({
-            success: true, 
+        // Commit both inserts together
+        await client.query('COMMIT');
+
+        client.release();
+
+        req.log?.info(
+            {
+                webhookEventId: webhookEvent.id,
+                eventId: webhookEvent.event_id
+            },
+            'Webhook event stored and added to outbox'
+        );
+
+        return res.status(202).json({
+            success: true,
             duplicate: false,
-            message: 'Webhook received and queued successfully',
+            message: 'Webhook received successfully',
             eventId,
-            webhookEventId: webhookEvent.id,
-            jobId: job.id,
-             
+            webhookEventId: webhookEvent.id
         });
+
     } catch (error) {
+        try {
+            await client.query('ROLLBACK');
+        } catch (rollbackError) {
+            req.log?.error(
+                rollbackError,
+                'Failed to rollback database transaction'
+            );
+        }
+
+        client.release();
         next(error);
     }
 }
 
-module.exports ={ receiveWebhook};
+module.exports = {
+    receiveWebhook
+};

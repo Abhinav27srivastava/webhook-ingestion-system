@@ -1,5 +1,8 @@
-// routes ka kaam itna hai:
-// request aayi -> middleware se verify/validate -> controller ke paas bhejna
+// routes ka kaam:
+// request aayi
+// -> middleware se verify
+// -> middleware se validate
+// -> controller ke paas bhejna
 
 const express = require('express');
 const router = express.Router();
@@ -16,35 +19,37 @@ const verifySignature = require('../middleware/webhookSignature');
  *     summary: Receive a webhook event
  *     description: |
  *       Receives a webhook payload, verifies its HMAC-SHA256 signature,
- *       validates it, stores it in PostgreSQL, and queues it for processing.
+ *       validates the request body, stores the event in PostgreSQL,
+ *       and queues it for asynchronous processing.
  *
- *       ⚠️ Signature Testing:
- *       Use compact one-line JSON when testing in Swagger.
- *       The request body must exactly match the body used to generate
- *       X-Webhook-Signature.
+ *       ### Signature verification
  *
- *       Example:
- *       {"id":"evt-email-test-007","type":"resource.created","timestamp":1787931799,"data":{"resourceId":"res-1234"}}
+ *       This endpoint requires two headers:
+ *
+ *       - `X-Webhook-Timestamp`
+ *       - `X-Webhook-Signature`
+ *
+ *       The signature is generated using:
+ *
+ *       `HMAC-SHA256(timestamp + "." + rawRequestBody, WEBHOOK_SECRET)`
+ *
+ *       The timestamp must be recent and within the configured
+ *       webhook tolerance window.
+ *
+ *       Swagger UI does not generate the HMAC signature automatically.
+ *       For live testing, generate a fresh signature externally using
+ *       the exact request body and current Unix timestamp.
+ *
+ *       The request body must exactly match the body used when
+ *       generating the signature.
  *
  *     tags:
  *       - Webhook
  *
  *     parameters:
- *       - in: header
- *         name: X-Webhook-Timestamp
- *         required: true
- *         description: Unix timestamp used for signature generation and replay protection.
- *         schema:
- *           type: string
- *         example: "1787931799"
+ *       - $ref: '#/components/parameters/WebhookTimestamp'
  *
- *       - in: header
- *         name: X-Webhook-Signature
- *         required: true
- *         description: HMAC-SHA256 signature in sha256=<digest> format.
- *         schema:
- *           type: string
- *         example: sha256=fb3bfbe7a5757913ce667510b37b7b4946771febba5d0324bc67741867e7edfe
+ *       - $ref: '#/components/parameters/WebhookSignature'
  *
  *     requestBody:
  *       required: true
@@ -68,17 +73,17 @@ const verifySignature = require('../middleware/webhookSignature');
  *               $ref: '#/components/schemas/WebhookResponse'
  *
  *       202:
- *         description: Webhook accepted and queued.
+ *         description: Webhook accepted and queued for asynchronous processing.
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/WebhookResponse'
  *
  *       400:
- *         description: Invalid request or validation error.
+ *         description: Invalid request body or raw body unavailable.
  *
  *       401:
- *         description: Missing or invalid webhook signature or timestamp.
+ *         description: Missing, expired, malformed, or invalid webhook signature.
  *
  *       500:
  *         description: Internal server error.
@@ -88,30 +93,7 @@ router.post(
     '/',
     verifySignature,
     validate(webhookSchema),
-    (req, res, next) => {
-        console.log('Webhook route POST handler called');
-        console.log('Request body:', req.body);
-        next();
-    },
     receiveWebhook
 );
 
 module.exports = router;
-
-// Flow:
-// Request
-//   ↓
-// verifySignature
-//   ↓
-// validate(webhookSchema)
-//   ↓
-// receiveWebhook
-//   ↓
-// PostgreSQL + BullMQ
-//   ↓
-// Worker
-//   ↓
-// Notification
-
-
-

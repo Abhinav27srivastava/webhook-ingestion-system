@@ -47,7 +47,7 @@ function verifySignature(req, res, next) {
             });
         }
 
-        const timestamp = Number(timestampHeader);
+        const timestamp = Number(timestampHeader);// this is for checking the expiry/freshness of the webhook request to avoid replay attacks
 
         if (!Number.isInteger(timestamp)) {
             return res.status(401).json({
@@ -84,7 +84,7 @@ function verifySignature(req, res, next) {
         }
 
         const signedPayload =
-            `${timestamp}.${req.rawBody}`;
+            `${timestampHeader}.${req.rawBody}`;
 
         const expectedSignature = crypto
             .createHmac('sha256', secret)

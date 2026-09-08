@@ -8,7 +8,7 @@ const app = require('../../src/app');
 const pool = require('../../src/config/db')
 const {
     generateWebhookSignature,
-} = require('../../src/utils/generatingSignature');
+} = require('../../src/Utils/generatingSignature');
 const webhookQueue = require('../../src/queue/webhookQueue');
 // Start BullMQ worker for integration tests
 const worker = require('../../src/workers/webhookWorker');

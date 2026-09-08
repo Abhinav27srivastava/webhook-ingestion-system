@@ -1,102 +1,210 @@
-const { Worker } = require('bullmq'); // use Worker class from bullmq
+const { Worker } = require('bullmq');
 const deadletterqueue = require('../queue/deadletterqueue');
-const pool =require('../config/db');
+const pool = require('../config/db');
 const { sendWebhookNotification } = require('../services/notificationService');
-// helper fucntion to process the jobs in the queue it pauses the job to the worker and the worker will process the job and return the result
-function sleep(ms = 5000) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-// 
+const logger = require('../logger/logger.js');
+
+const queueName =
+    process.env.WEBHOOK_QUEUE_NAME ||
+    (process.env.NODE_ENV === 'test'
+        ? 'webhook-queue-test'
+        : 'webhook-queue');
+
+
 const worker = new Worker(
-  'webhook-queue',
-  async (job) => {
-     const{
+    queueName,
+
+    async (job) => {
+
+        const {
             webhookEventId,
             eventId,
             payload,
-        } = job.data;  // initially job.data contain payload
-   
-    console.log("job_id:", job.id);
-    console.log("job_name:", job.name);
-    console.log("job_data:", job.data);
-    console.log('Processing webhook job:');
-   //throw new Error("DLQ test");
-   // mark event as processing
-    await pool.query(
-      `
-       UPDATE webhook_events
-       SET status ='processing'
-       WHERE id =$1 `, [webhookEventId]
-    );
-  // checking processed or not ... so we are going to use try and catch for this..
-   try{
-    console.log(`Processing webhook event ${eventId}`);
-    await sendWebhookNotification({
-        eventId,
-        payload,
-       
-    });
-    // If processing succeeds:
-            await pool.query(
-                `
-                UPDATE webhook_events
-                SET status = 'processed'
-                WHERE id = $1
-                `,
-                [webhookEventId]
-            );
-              console.log(
-                `Webhook event ${webhookEventId} processed successfully`
-            );
-    return {
-      success:true,
-      webhookEventId,
-      eventId
-    };
-  
-  } catch (error) {
-            // Mark current attempt as failed
-            await pool.query(
-                `
-                UPDATE webhook_events
-                SET status = 'failed'
-                WHERE id = $1
-                `,
-                [webhookEventId]
-            );
+        } = job.data;
 
-            throw error;
-        }
+
+        // Mark event as processing
+        await pool.query(
+            `
+            UPDATE webhook_events
+            SET status = 'processing'
+            WHERE id = $1
+            `,
+            [webhookEventId]
+        );
+
+
+        logger.info(
+            {
+                jobId: job.id,
+                webhookEventId,
+                eventId,
+            },
+            'Processing webhook event'
+        );
+
+
+        // Send notification
+        await sendWebhookNotification({
+            eventId,
+            payload,
+        });
+
+
+        // Processing successful
+        await pool.query(
+            `
+            UPDATE webhook_events
+            SET status = 'processed'
+            WHERE id = $1
+            `,
+            [webhookEventId]
+        );
+
+
+        logger.info(
+            {
+                jobId: job.id,
+                webhookEventId,
+                eventId,
+            },
+            'Webhook event processed successfully'
+        );
+
+
+        return {
+            success: true,
+            webhookEventId,
+            eventId,
+        };
     },
-  {
-    connection: {   // why this connection is needed because we are using redis to store the jobs in the queue and the worker needs to connect to redis to get the jobs from the queue
-      host: process.env.REDIS_HOST,
-      port: Number(process.env.REDIS_PORT),
-    },
-    concurrency: 5, // how many jobs can be processed in parallel by the worker
-  }
+
+
+    {
+        connection: {
+            host: process.env.REDIS_HOST,
+            port: Number(process.env.REDIS_PORT),
+        },
+
+        // Maximum 5 jobs processed simultaneously
+        concurrency: 5,
+    }
 );
 
-worker.on('failed', async (job, err) => {
-    if (!job) return;
+-
+// BullMQ failed event
 
-    console.log(
-        `Job ${job.id} failed with error ${err.message}`
+
+worker.on('failed', async (job, err) => {
+
+    if (!job) {
+        return;
+    }
+
+
+    const {
+        webhookEventId,
+        eventId,
+        payload,
+    } = job.data;
+
+
+    const maxAttempts = job.opts.attempts || 0;
+
+
+    logger.error(
+        {
+            jobId: job.id,
+            webhookEventId,
+            eventId,
+            attemptsMade: job.attemptsMade,
+            maxAttempts,
+            error: err.message,
+        },
+        'Webhook job failed'
     );
 
-    if (job.attemptsMade >= job.opts.attempts) {
-        await deadletterqueue.add('failed-job', {
-            webhookEventId: job.data.webhookEventId,
-            eventId: job.data.eventId,
-            payload: job.data.payload,
-            jobId: job.id,
-            error: err.message,
-            failedAt: new Date().toISOString()
-        });
+
+  
+    // Retry is still remaining
+
+
+    if (job.attemptsMade < maxAttempts) {
+
+        await pool.query(
+            `
+            UPDATE webhook_events
+            SET status = 'retrying'
+            WHERE id = $1
+            `,
+            [webhookEventId]
+        );
+
+
+        logger.warn(
+            {
+                jobId: job.id,
+                webhookEventId,
+                eventId,
+                attemptsMade: job.attemptsMade,
+                maxAttempts,
+            },
+            'Webhook job will be retried'
+        );
+
+
+        return;
     }
+
+
+    // All retries exhausted
+  
+
+    await pool.query(
+        `
+        UPDATE webhook_events
+        SET status = 'failed'
+        WHERE id = $1
+        `,
+        [webhookEventId]
+    );
+
+
+    
+    // Send failed job to Dead Letter Queue
+   
+
+    await deadletterqueue.add('failed-job', {
+
+        webhookEventId,
+        eventId,
+        payload,
+
+        jobId: job.id,
+
+        error: err.message,
+
+        failedAt: new Date().toISOString(),
+    });
+
+
+    logger.error(
+        {
+            jobId: job.id,
+            webhookEventId,
+            eventId,
+        },
+        'Webhook job moved to Dead Letter Queue'
+    );
 });
-console.log("Worker is working");
+
+
+logger.info(
+    {
+        queueName,
+    },
+    'Webhook worker started'
+);
+
 
 module.exports = worker;
-
-

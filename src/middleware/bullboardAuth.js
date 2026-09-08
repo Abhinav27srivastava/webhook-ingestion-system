@@ -32,7 +32,7 @@ function bullboardAuth(req, res, next) {
         });
     }
 
-    const authHeader = req.headers.authorization;
+    const authHeader = req.headers.authorization;  //reading the header
 
     if (!authHeader || !authHeader.startsWith('Basic ')) {
         res.set(
@@ -88,9 +88,6 @@ function bullboardAuth(req, res, next) {
         receivedPassword,
         password
     );
-    console.log('Received username:', receivedUsername);
-    console.log('Username valid:', validUsername);
-    console.log('Password valid:', validPassword);
 
     if (!validUsername || !validPassword) {
         res.set(
