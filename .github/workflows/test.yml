@@ -75,5 +75,15 @@ jobs:
       - name: Run database migrations
         run: npm run migrate
 
+      - name: Start outbox publisher
+        run: |
+          nohup npm run publisher > publisher.log 2>&1 &
+          echo $! > publisher.pid
+          sleep 5
+
       - name: Run tests
         run: npm test
+
+      - name: Show publisher logs
+        if: always()
+        run: cat publisher.log
