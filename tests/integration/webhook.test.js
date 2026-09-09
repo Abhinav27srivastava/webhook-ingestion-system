@@ -1,9 +1,10 @@
 const request = require('supertest');
 jest.mock('../../src/services/notificationService', () => ({
     sendWebhookNotification: jest.fn().mockResolvedValue({
-        id: 'test-email-id'
+        id: 'test-email-id',
     }),
 }));
+
 const app = require('../../src/app');
 const pool = require('../../src/config/db')
 const {
