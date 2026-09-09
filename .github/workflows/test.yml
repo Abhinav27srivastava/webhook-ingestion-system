@@ -39,6 +39,7 @@ jobs:
           - 6379:6379
 
     env:
+
       NODE_ENV: test
 
       DB_HOST: localhost
@@ -82,7 +83,7 @@ jobs:
           sleep 5
 
       - name: Run tests
-        run: npm test
+        run: npm test -- --detectOpenHandles
 
       - name: Show publisher logs
         if: always()
