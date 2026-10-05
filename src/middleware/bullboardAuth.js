@@ -52,7 +52,7 @@ function bullboardAuth(req, res, next) {
         decodedCredentials = Buffer
             .from(encodedCredentials, 'base64')
             .toString('utf8');
-    } catch (error) {
+    } catch  {
         res.set(
             'WWW-Authenticate',
             'Basic realm="Bull Board"'

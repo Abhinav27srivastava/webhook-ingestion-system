@@ -5,6 +5,7 @@ const {
     registerSchema,
     loginSchema
 } = require("../validation/authSchema");
+const logger = require('../logger/logger.js');
 const register = async (req, res) => {
     try {
         // Validate request body
@@ -119,7 +120,7 @@ const login = async (req, res) => {
             });
         }
 
-        console.error(error);
+        logger.error(error);
 
         return res.status(500).json({
             success: false,

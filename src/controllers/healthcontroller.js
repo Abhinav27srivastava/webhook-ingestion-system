@@ -1,6 +1,6 @@
 const pool = require('../config/db');
 const { redisClient } = require('../config/redis');
-const logger = require('../logger/logger');
+
 
 
 const healthCheck = async (req,res) =>{
@@ -29,7 +29,7 @@ const healthCheck = async (req,res) =>{
     });
     }
 
-  catch(err)
+  catch
   {
    res.status(503).json({   // 503 means server is running but some dependecy is not availaible
     status: "unhealthy",   

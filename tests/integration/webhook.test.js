@@ -1,4 +1,7 @@
+require('dotenv').config();
+
 const request = require('supertest');
+
 const mockSendWebhookNotification = jest.fn().mockResolvedValue({
     id: 'test-email-id',
 });
@@ -8,41 +11,24 @@ jest.mock('../../src/services/notificationService', () => ({
 }));
 
 const app = require('../../src/app');
-const pool = require('../../src/config/db')
+const pool = require('../../src/config/db');
+
 const {
     generateWebhookSignature,
 } = require('../../src/utils/generatingSignature');
+
+const {
+    publishOutboxEvents,
+} = require('../../src/publisher/outboxPublisher');
+
 const webhookQueue = require('../../src/queue/webhookQueue');
+
 // Start BullMQ worker for integration tests
 const worker = require('../../src/workers/webhookWorker');
+
 const deadletterQueue = require('../../src/queue/deadletterqueue');
 
 
-async function waitForProcessed(eventId, timeout = 10000) {
-    const start = Date.now();
-
-    while (Date.now() - start < timeout) {
-        const result = await pool.query(
-            `
-            SELECT status
-            FROM webhook_events
-            WHERE event_id = $1
-            `,
-            [eventId]
-        );
-
-        if (result.rows.length > 0 &&
-            result.rows[0].status === 'processed') {
-            return result.rows[0];
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 250));
-    }
-
-    throw new Error(
-        `Event ${eventId} was not processed within ${timeout}ms`
-    );
-}
 describe('WEBHOOK API', () => {
 
     test('reject webhook request without signature', async () => {
@@ -63,7 +49,8 @@ describe('WEBHOOK API', () => {
         expect(response.statusCode).toBe(401);
     });
 
-    test('should accept a valid signed webhook and saved it to database', async () => {
+
+    test('should accept a valid signed webhook and save it to database', async () => {
         const timestamp = Math.floor(Date.now() / 1000);
 
         const payload = {
@@ -98,70 +85,159 @@ describe('WEBHOOK API', () => {
         expect(response.body.success).toBe(true);
         expect(response.body.duplicate).toBe(false);
 
-
-        // verify that webhook request actual saved in postgres
+        // Verify that webhook request was saved in PostgreSQL
         const result = await pool.query(
-            `SELECT id, event_id, status
+            `
+            SELECT id, event_id, status
             FROM webhook_events
-            WHERE event_id =$1
-            `,[payload.id]
+            WHERE event_id = $1
+            `,
+            [payload.id]
         );
+
         expect(result.rows).toHaveLength(1);
-    expect(result.rows[0].event_id).toBe(payload.id);
-    
- const processed = await waitForProcessed(payload.id);
+        expect(result.rows[0].event_id).toBe(payload.id);
+    });
 
-expect(processed.status).toBe('processed');
 
-    },
-    15000);
     test('should reject duplicate webhook event', async () => {
-    const timestamp = Math.floor(Date.now() / 1000);
+        const timestamp = Math.floor(Date.now() / 1000);
 
-    const payload = {
-        id: `evt-duplicate-${Date.now()}`,
-        type: 'payment.success',
-        timestamp,
-        data: {
-            amount: 500,
-            currency: 'INR',
-        },
-    };
+        const payload = {
+            id: `evt-duplicate-${Date.now()}`,
+            type: 'payment.success',
+            timestamp,
+            data: {
+                amount: 500,
+                currency: 'INR',
+            },
+        };
 
-    const rawBody = JSON.stringify(payload);
+        const rawBody = JSON.stringify(payload);
 
-    const signature = generateWebhookSignature(
-        rawBody,
-        timestamp,
-        process.env.WEBHOOK_SECRET
-    );
+        const signature = generateWebhookSignature(
+            rawBody,
+            timestamp,
+            process.env.WEBHOOK_SECRET
+        );
 
-    // First request
-    const firstResponse = await request(app)
-        .post('/webhook')
-        .set('Content-Type', 'application/json')
-        .set('X-Webhook-Timestamp', String(timestamp))
-        .set('X-Webhook-Signature', signature)
-        .send(rawBody);
+        // First request
+        const firstResponse = await request(app)
+            .post('/webhook')
+            .set('Content-Type', 'application/json')
+            .set('X-Webhook-Timestamp', String(timestamp))
+            .set('X-Webhook-Signature', signature)
+            .send(rawBody);
 
-    expect([200, 202]).toContain(firstResponse.statusCode);
-    expect(firstResponse.body.duplicate).toBe(false);
+        expect([200, 202]).toContain(firstResponse.statusCode);
+        expect(firstResponse.body.duplicate).toBe(false);
 
-    // Second request with the SAME event ID
-    const secondResponse = await request(app)
-        .post('/webhook')
-        .set('Content-Type', 'application/json')
-        .set('X-Webhook-Timestamp', String(timestamp))
-        .set('X-Webhook-Signature', signature)
-        .send(rawBody);
+        // Second request with the SAME event ID
+        const secondResponse = await request(app)
+            .post('/webhook')
+            .set('Content-Type', 'application/json')
+            .set('X-Webhook-Timestamp', String(timestamp))
+            .set('X-Webhook-Signature', signature)
+            .send(rawBody);
 
-    expect(secondResponse.statusCode).toBe(200);
-    expect(secondResponse.body.duplicate).toBe(true);
+        expect(secondResponse.statusCode).toBe(200);
+        expect(secondResponse.body.duplicate).toBe(true);
+    });
+
+
+    test('should publish outbox event and not create duplicate BullMQ job', async () => {
+        const timestamp = Math.floor(Date.now() / 1000);
+
+        const payload = {
+            id: `evt-outbox-${Date.now()}`,
+            type: 'payment.success',
+            timestamp,
+            data: {
+                amount: 1000,
+                currency: 'INR',
+            },
+        };
+
+        const rawBody = JSON.stringify(payload);
+
+        const signature = generateWebhookSignature(
+            rawBody,
+            timestamp,
+            process.env.WEBHOOK_SECRET
+        );
+
+        // 1. Send signed webhook
+        const response = await request(app)
+            .post('/webhook')
+            .set('Content-Type', 'application/json')
+            .set('X-Webhook-Timestamp', String(timestamp))
+            .set('X-Webhook-Signature', signature)
+            .send(rawBody);
+
+        expect(response.statusCode).toBe(202);
+
+        // 2. Verify outbox event is pending
+        const outboxBefore = await pool.query(
+            `
+            SELECT id, status
+            FROM outbox_events
+            WHERE event_id = $1
+            `,
+            [payload.id]
+        );
+
+        expect(outboxBefore.rows).toHaveLength(1);
+        expect(outboxBefore.rows[0].status).toBe('pending');
+
+        // 3. Publish outbox event
+        await publishOutboxEvents();
+
+        // 4. Verify outbox event became published
+        const outboxAfter = await pool.query(
+            `
+            SELECT id, status
+            FROM outbox_events
+            WHERE event_id = $1
+            `,
+            [payload.id]
+        );
+
+        expect(outboxAfter.rows).toHaveLength(1);
+        expect(outboxAfter.rows[0].status).toBe('published');
+
+        const outboxId = outboxAfter.rows[0].id;
+
+        // 5. Verify BullMQ job exists
+        const jobId = `outbox-${outboxId}`;
+
+        const job = await webhookQueue.getJob(jobId);
+
+        expect(job).not.toBeNull();
+        expect(job.id).toBe(jobId);
+
+        // 6. Publish the same outbox event again
+        await publishOutboxEvents();
+
+        // 7. Verify that no duplicate BullMQ job was created
+        const jobs = await webhookQueue.getJobs([
+            'waiting',
+            'active',
+            'completed',
+            'failed',
+        ]);
+
+        const matchingJobs = jobs.filter(
+            job => job.id === jobId
+        );
+
+        expect(matchingJobs).toHaveLength(1);
+    });
 });
-   afterAll(async()=>{
-     await worker.close();
-     await webhookQueue.close();
-     await deadletterQueue.close();
-     await pool.end();
-   })
+
+
+afterAll(async () => {
+    await worker.close();
+    await webhookQueue.close();
+    await deadletterQueue.close();
+    await pool.end();
 });

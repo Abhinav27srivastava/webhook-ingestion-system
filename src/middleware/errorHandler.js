@@ -1,7 +1,7 @@
 
 const logger = require('../logger/logger');
 
-const errorHandler = (err,req,res,next) =>{  // express automatically identifies this as an error middlerware because it has 4 parameters
+const errorHandler = (err,req,res,_next) =>{  // express automatically identifies this as an error middlerware because it has 4 parameters
 
     logger.error(err);   
 

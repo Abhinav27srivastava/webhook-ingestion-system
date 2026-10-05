@@ -1,8 +1,5 @@
 const swaggerJsDoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
-const { required } = require("../validation/webhookSchema");
-const { describe } = require("zod/mini");
-const { success, boolean } = require("zod");
 
 const options = {
     definition: {

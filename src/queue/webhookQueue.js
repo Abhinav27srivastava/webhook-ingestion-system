@@ -11,6 +11,10 @@ const webhookQueue = new Queue(queueName, {  //webhook-queue replace with queueN
         host: process.env.REDIS_HOST,
         port: Number(process.env.REDIS_PORT),
     },
+    defaultJoboptions:{
+        removeOncomplete: {coun: 1000},  // keep last 1000 completed jobs in the queue
+        removeOnFail: {count: 5000}  // keep last 5000 failed jobs in the queue
+    },
 });
 
 module.exports = webhookQueue;

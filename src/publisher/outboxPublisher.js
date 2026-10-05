@@ -5,14 +5,14 @@ const logger = require('../logger/logger.js');
 async function publishOutboxEvents() {
     const client = await pool.connect();
 
-    let events = [];
+    let events;
 
     try {
         /*
          * Step 1:
          * Pick pending events and lock them.
          *
-         * SKIP LOCKED allows multiple publisher instances
+         * SKIP LOCKED --> allows multiple publisher instances
          * to work without picking the same rows.
          */
         await client.query('BEGIN');

@@ -9,7 +9,8 @@
     "publisher": "node src/publisher/index.js",
     "worker": "node src/workers/webhookWorker.js",
     "migrate": "node migrate.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "lint": "eslint ."
   },
   "keywords": [],
   "author": "",
@@ -37,6 +38,9 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
     "jest": "^30.4.2",
     "nodemon": "^3.1.14",
     "supertest": "^7.2.2"
